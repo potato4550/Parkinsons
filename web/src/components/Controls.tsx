@@ -35,6 +35,8 @@ export function Controls({
             <option value="spatial_robustness">Pattern robustness</option>
             <option value="validation_score">Independent evidence</option>
             <option value="agreement">Evidence agreement</option>
+            <option value="pattern">Typical disease pattern (illustrative)</option>
+            <option value="scan_effect">Your MRI group difference</option>
           </select>
         </label>
         <label className="search-control">Search brain region

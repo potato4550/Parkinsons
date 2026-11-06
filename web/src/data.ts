@@ -1,4 +1,4 @@
-import type { AtlasGeometry, BiologicalInterpretationData, EnrichmentData, MultidiseaseAtlas, ProjectMetadata, RegionRecord } from './types'
+import type { AtlasGeometry, BiologicalInterpretationData, EnrichmentData, MultidiseaseAtlas, ProjectMetadata, RegionRecord, ScanEffects, TypicalPatterns } from './types'
 
 const DATA_ROOT = '/data'
 
@@ -6,6 +6,10 @@ async function fetchJson<T>(name: string): Promise<T> {
   const response = await fetch(`${DATA_ROOT}/${name}`)
   if (!response.ok) throw new Error(`Could not load ${name} (${response.status})`)
   return response.json() as Promise<T>
+}
+
+async function optionalJson<T>(name: string): Promise<T | null> {
+  try { return await fetchJson<T>(name) } catch { return null }
 }
 
 export async function loadResearchData() {
@@ -23,7 +27,8 @@ export async function loadResearchData() {
   }))
   validateClientData(enrichment, metadata, geometry, biology)
   validateMultidiseaseData(multidisease, geometry)
-  return { enrichment, metadata, geometry, multidisease }
+  const [patterns, scan] = await Promise.all([optionalJson<TypicalPatterns>('typical_patterns.json'), optionalJson<ScanEffects>('scan_group_effects.json')])
+  return { enrichment, metadata, geometry, multidisease, patterns, scan }
 }
 
 export function validateMultidiseaseData(atlas: MultidiseaseAtlas, geometry: AtlasGeometry) {

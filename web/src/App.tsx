@@ -6,12 +6,12 @@ import { RegionPanel } from './components/RegionPanel'
 import { ResearchSections } from './components/ResearchSections'
 import { Tooltip } from './components/Tooltip'
 import { loadResearchData } from './data'
-import type { AtlasGeometry, EnrichmentData, Hemisphere, Metric, MultidiseaseAtlas, ProjectMetadata, RegionRecord, ViewPreset } from './types'
+import type { AtlasGeometry, EnrichmentData, Hemisphere, Metric, MultidiseaseAtlas, ProjectMetadata, ScanEffects, TypicalPatterns, RegionRecord, ViewPreset } from './types'
 
-type Loaded = { enrichment: EnrichmentData; metadata: ProjectMetadata; geometry: AtlasGeometry; multidisease: MultidiseaseAtlas }
+type Loaded = { enrichment: EnrichmentData; metadata: ProjectMetadata; geometry: AtlasGeometry; multidisease: MultidiseaseAtlas; patterns: TypicalPatterns | null; scan: ScanEffects | null }
 const BrainScene = lazy(() => import('./components/BrainScene').then((module) => ({ default: module.BrainScene })))
 const query = new URLSearchParams(window.location.search)
-const validMetrics: Metric[] = ['anatomy', 'z_score', 'observed_score', 'fdr_p', 'spatial_robustness', 'validation_score', 'agreement']
+const validMetrics: Metric[] = ['anatomy', 'z_score', 'observed_score', 'fdr_p', 'spatial_robustness', 'validation_score', 'agreement', 'pattern', 'scan_effect']
 const validViews: ViewPreset[] = ['reset', 'left', 'right', 'anterior', 'posterior', 'superior', 'inferior']
 
 export default function App() {
@@ -69,6 +69,17 @@ export default function App() {
   const observedValues = enrichment.regions.map((region) => region.observed_score)
   const observedDomain: [number, number] = [Math.min(...observedValues), Math.max(...observedValues)]
   const validationDomain = metadata.metrics.validation_score.domain as [number, number]
+  const overlay = (() => {
+    if (metric === 'pattern') {
+      const p = loaded.patterns?.patterns[diseaseId]
+      return p ? new Map(Object.entries(p).map(([k, v]) => [Number(k), v])) : new Map<number, number>()
+    }
+    if (metric === 'scan_effect' && loaded.scan) {
+      const bound = Math.max(0.01, ...loaded.scan.regions.map((r) => Math.abs(r.effect_d)))
+      return new Map(loaded.scan.regions.map((r) => [r.region_id, Math.max(0, -r.effect_d) / bound] as [number, number]))
+    }
+    return new Map<number, number>()
+  })()
   const selectRegion = (region: RegionRecord) => {
     setHemisphere('whole')
     setSelected(region)
@@ -129,12 +140,14 @@ export default function App() {
             observedDomain={observedDomain}
             validationDomain={validationDomain}
             fdrThreshold={metadata.analysis.fdr_threshold}
+            overlay={overlay}
             onHover={(region, point) => { setHovered(region); if (point) setTooltipPoint(point) }}
             onSelect={selectRegion}
             onReset={() => setView('reset')}
           /></Suspense>
           <div className="stage-label"><span>{validationMode ? 'ATLAS REGION VALIDATION' : `${enrichment.disease_name.toUpperCase()} · AAL3 · 138 REGIONS`}</span><span>Drag to rotate · scroll/pinch to zoom · right-drag to pan</span></div>
           <Legend
+            scan={loaded.scan}
             metric={metric}
             zDomain={zDomain}
             observedDomain={observedDomain}
@@ -150,7 +163,7 @@ export default function App() {
               <button key={region.region_id} onClick={() => selectRegion(region)}><span>{region.region_id}</span>{region.region_name}</button>
             ))}</div>
           )}
-          {selected && <RegionPanel region={selected} diseaseName={enrichment.disease_name} threshold={metadata.analysis.fdr_threshold} onClose={() => setSelected(null)} />}
+          {selected && <RegionPanel scan={loaded.scan?.regions.find((r) => r.region_id === selected.region_id) ?? null} pattern={loaded.patterns?.patterns[diseaseId]?.[String(selected.region_id)]} region={selected} diseaseName={enrichment.disease_name} threshold={metadata.analysis.fdr_threshold} onClose={() => setSelected(null)} />}
           {showGuide && !selected && <div className="explore-guide" role="dialog" aria-label="Explore the brain"><p className="eyebrow">Explore the brain</p><h2>Find the signal</h2><p>Rotate by dragging. Zoom with your scroll wheel or pinch. Hover over a region, then click it to see the evidence behind its signal.</p><button className="download-button" onClick={() => { window.localStorage.setItem('gene2brain-guide-seen', '1'); setShowGuide(false) }}>Got it</button></div>}
         </div>
       </section>

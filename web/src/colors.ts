@@ -24,11 +24,17 @@ export function colorForRegion(
   metric: Metric,
   metadata: { zDomain: [number, number]; observedDomain: [number, number]; validationDomain: [number, number]; fdrThreshold: number },
   validationMode = false,
+  overlay?: Map<number, number>,
 ) {
   if (validationMode) {
     return new Color().setHSL((region.region_id * 0.61803398875) % 1, 0.48, 0.61)
   }
   if (metric === 'anatomy') return NEUTRAL.clone()
+  if (metric === 'pattern' || metric === 'scan_effect') {
+    const v = overlay?.get(region.region_id)
+    if (v === undefined) return NOT_MEASURED.clone()
+    return NEUTRAL.clone().lerp(metric === 'pattern' ? new Color('#d94801') : POSITIVE, Math.max(0, Math.min(1, v)))
+  }
   if (metric === 'agreement') return AGREEMENT_COLORS[region.agreement_status].clone()
   if (metric === 'validation_score') {
     if (region.validation_score === null) return NOT_MEASURED.clone()

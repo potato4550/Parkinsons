@@ -21,6 +21,7 @@ interface Props {
   observedDomain: [number, number]
   validationDomain: [number, number]
   fdrThreshold: number
+  overlay?: Map<number, number>
   onHover: (region: RegionRecord | null, point?: { x: number; y: number }) => void
   onSelect: (region: RegionRecord) => void
   onReset: () => void
@@ -221,12 +222,12 @@ function AtlasMesh(props: Props) {
       const color = colorForRegion(
         records.get(regionId)!, props.metric,
         { zDomain: props.zDomain, observedDomain: props.observedDomain, validationDomain: props.validationDomain, fdrThreshold: props.fdrThreshold },
-        props.validationMode,
+        props.validationMode, props.overlay,
       )
       for (let index = offset; index < offset + count; index += 1) colorAttribute.setXYZ(index, color.r, color.g, color.b)
     })
     colorAttribute.needsUpdate = true
-  }, [combined, props.fdrThreshold, props.metric, props.observedDomain, props.validationDomain, props.validationMode, props.zDomain, records])
+  }, [combined, props.fdrThreshold, props.metric, props.observedDomain, props.validationDomain, props.validationMode, props.zDomain, props.overlay, records])
   useEffect(() => () => { material.dispose(); highlightMaterial.dispose(); selectedMaterial.dispose() }, [highlightMaterial, material, selectedMaterial])
 
   const setHoverGeometry = (regionId: number | null) => {

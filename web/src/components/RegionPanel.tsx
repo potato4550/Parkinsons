@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatValue } from '../format'
-import type { RegionRecord } from '../types'
+import type { RegionRecord, ScanEffectRegion } from '../types'
 
 function NullSummary({ region }: { region: RegionRecord }) {
   const low = Math.min(region.observed_score, region.random_mean - 3 * region.random_std)
@@ -19,7 +19,7 @@ function NullSummary({ region }: { region: RegionRecord }) {
   )
 }
 
-export function RegionPanel({ region, diseaseName, threshold, onClose }: { region: RegionRecord; diseaseName: string; threshold: number; onClose: () => void }) {
+export function RegionPanel({ scan, pattern, region, diseaseName, threshold, onClose }: { scan?: ScanEffectRegion | null; pattern?: number; region: RegionRecord; diseaseName: string; threshold: number; onClose: () => void }) {
   const [showNull, setShowNull] = useState(false)
   const [showWhy, setShowWhy] = useState(false)
   const direction = region.z_score > 0 ? 'above' : region.z_score < 0 ? 'below' : 'at'
@@ -30,6 +30,8 @@ export function RegionPanel({ region, diseaseName, threshold, onClose }: { regio
       <span className="eyebrow">AAL3 · {region.atlas_id}</span>
       <h2>{region.region_name}</h2>
       <p className="disease-label">{diseaseName} · weighted gene set</p>
+      {pattern !== undefined && <p className="caution">Typical-pattern weight (illustrative, from published staging): {formatValue(pattern, 2)} of 1.</p>}
+      {scan && <p className="caution">Your scans: grey-matter {formatValue(scan.percent_difference, 1)}% (patients vs controls), d = {formatValue(scan.effect_d, 2)}, FDR p = {formatValue(scan.fdr_p, 3)}. The genes listed below are the ones most expressed in this region in healthy brains; that suggests candidate biology, not that they caused the difference.</p>}
       <h3 className="panel-section-title">Why is this region highlighted?</h3>
       <p className="interpretation">Some genes linked to {diseaseName} are active here. Their combined activity is {region.z_score > 0 ? 'higher' : 'lower'} than expected when compared with matched random gene groups.</p>
       <div className="stat-grid">

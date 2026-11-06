@@ -1,7 +1,8 @@
 import type { Metric } from '../types'
 import { formatValue } from '../format'
 
-export function Legend({ metric, zDomain, observedDomain, validationDomain, threshold, significant, spatialRobustRegions, mappedValidationRegions, validationMode }: {
+export function Legend({ scan, metric, zDomain, observedDomain, validationDomain, threshold, significant, spatialRobustRegions, mappedValidationRegions, validationMode }: {
+  scan?: { n_control: number; n_patient: number; caveat: string; n_regions_fdr_below_0_05: number } | null
   metric: Metric
   zDomain: [number, number]
   observedDomain: [number, number]
@@ -20,6 +21,21 @@ export function Legend({ metric, zDomain, observedDomain, validationDomain, thre
   if (metric === 'anatomy') return (
     <div className="legend" aria-label="Anatomy only legend">
       <strong>Anatomy only</strong><span>Folded fsaverage6 pial cortical surface. No research values or region colors are shown.</span>
+    </div>
+  )
+  if (metric === 'pattern') return (
+    <div className="legend" aria-label="Typical pattern legend">
+      <strong>Typical disease pattern · illustrative</strong>
+      <div className="legend-values"><span>Less involved</span><span>Most involved</span></div>
+      <span>Hand-assigned from published staging (Braak &amp; Braak 1991; Braak 2003). Not measured data and not a scan result. Available for Parkinson and Alzheimer; gray otherwise.</span>
+    </div>
+  )
+  if (metric === 'scan_effect') return (
+    <div className="legend" aria-label="MRI group difference legend">
+      <strong>Your MRI group difference</strong>
+      {scan ? <><div className="legend-values"><span>No difference</span><span>Less grey matter in patients</span></div>
+      <span>{scan.n_patient} patients vs {scan.n_control} controls; {scan.n_regions_fdr_below_0_05} regions pass FDR 0.05. Rough pipeline: {scan.caveat}</span></>
+      : <span>No scan_group_effects.json found. Run scripts/scan_group_map.py on your scans and put the output in web/public/data/.</span>}
     </div>
   )
   if (metric === 'fdr_p') return (
