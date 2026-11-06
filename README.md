@@ -173,3 +173,9 @@ npm run build
 The AHBA was created by the Allen Institute for Brain Science. Raw data are
 retrieved from the Allen Brain Map well-known-file API by `abagen`; see the
 generated provenance record for URLs, versions, and the access date.
+
+## MRI upload (rough pattern match)
+1. `pip install fastapi uvicorn python-multipart numpy pandas scipy scikit-learn SimpleITK nibabel nilearn statsmodels`
+2. Run `scripts/scan_group_map.py` on controls + patients, then `python scripts/build_scan_reference.py web/public/data/scan_group_effects_matrix.npz`
+3. `python -m uvicorn server.app:app --port 8000` (repo root) and `cd web && npm run dev`
+4. Use "Upload an MRI" in the Explore section. Research demo only, not a diagnosis.

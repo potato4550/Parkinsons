@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Controls } from './components/Controls'
 import { Legend } from './components/Legend'
 import { MultiDiseaseSections } from './components/MultiDiseaseSections'
+import { ScanUpload, type UploadResult } from './components/ScanUpload'
 import { RegionPanel } from './components/RegionPanel'
 import { ResearchSections } from './components/ResearchSections'
 import { Tooltip } from './components/Tooltip'
@@ -11,7 +12,7 @@ import type { AtlasGeometry, EnrichmentData, Hemisphere, Metric, MultidiseaseAtl
 type Loaded = { enrichment: EnrichmentData; metadata: ProjectMetadata; geometry: AtlasGeometry; multidisease: MultidiseaseAtlas; patterns: TypicalPatterns | null; scan: ScanEffects | null }
 const BrainScene = lazy(() => import('./components/BrainScene').then((module) => ({ default: module.BrainScene })))
 const query = new URLSearchParams(window.location.search)
-const validMetrics: Metric[] = ['anatomy', 'z_score', 'observed_score', 'fdr_p', 'spatial_robustness', 'validation_score', 'agreement', 'pattern', 'scan_effect']
+const validMetrics: Metric[] = ['anatomy', 'z_score', 'observed_score', 'fdr_p', 'spatial_robustness', 'validation_score', 'agreement', 'pattern', 'scan_effect', 'upload']
 const validViews: ViewPreset[] = ['reset', 'left', 'right', 'anterior', 'posterior', 'superior', 'inferior']
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
   const [tooltipPoint, setTooltipPoint] = useState({ x: 0, y: 0 })
   const [focusNonce, setFocusNonce] = useState(0)
   const [viewPreset, setViewPreset] = useState<ViewPreset>(() => validViews.includes(query.get('view') as ViewPreset) ? query.get('view') as ViewPreset : 'reset')
+  const [upload, setUpload] = useState<UploadResult | null>(null)
   const [shareMessage, setShareMessage] = useState('')
   const [showGuide, setShowGuide] = useState(() => window.localStorage.getItem('gene2brain-guide-seen') !== '1')
   const validationMode = useMemo(() => window.location.pathname.endsWith('/dev/atlas-validation') || query.get('mode') === 'atlas', [])
@@ -74,6 +76,7 @@ export default function App() {
       const p = loaded.patterns?.patterns[diseaseId]
       return p ? new Map(Object.entries(p).map(([k, v]) => [Number(k), v])) : new Map<number, number>()
     }
+    if (metric === 'upload' && upload) return new Map(upload.regions.map((r) => [r.region_id, Math.min(1, Math.max(0, -r.z) / 3)] as [number, number]))
     if (metric === 'scan_effect' && loaded.scan) {
       const bound = Math.max(0.01, ...loaded.scan.regions.map((r) => Math.abs(r.effect_d)))
       return new Map(loaded.scan.regions.map((r) => [r.region_id, Math.max(0, -r.effect_d) / bound] as [number, number]))
@@ -126,6 +129,7 @@ export default function App() {
           onSelect={selectRegion}
           onView={setView}
         />
+        <ScanUpload result={upload} onResult={(r) => { setUpload(r); if (r) setMetric('upload') }} />
         <div className={`brain-stage ${selected ? 'has-panel' : ''}`}>
           <Suspense fallback={<div className="scene-loading">Preparing WebGL brain…</div>}><BrainScene
             geometryData={geometry}

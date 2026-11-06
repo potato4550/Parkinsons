@@ -36,6 +36,7 @@ export function Controls({
             <option value="validation_score">Independent evidence</option>
             <option value="agreement">Evidence agreement</option>
             <option value="pattern">Typical disease pattern (illustrative)</option>
+            <option value="upload">Your uploaded scan</option>
             <option value="scan_effect">Your MRI group difference</option>
           </select>
         </label>

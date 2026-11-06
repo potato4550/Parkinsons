@@ -30,6 +30,13 @@ export function Legend({ scan, metric, zDomain, observedDomain, validationDomain
       <span>Hand-assigned from published staging (Braak &amp; Braak 1991; Braak 2003). Not measured data and not a scan result. Available for Parkinson and Alzheimer; gray otherwise.</span>
     </div>
   )
+  if (metric === 'upload') return (
+    <div className="legend" aria-label="Uploaded scan legend">
+      <strong>Your uploaded scan</strong>
+      <div className="legend-values"><span>Typical for controls</span><span>Much less grey matter</span></div>
+      <span>Regions where this scan has less grey matter than the control group (up to 3 SD). Rough pipeline; gray means no upload yet.</span>
+    </div>
+  )
   if (metric === 'scan_effect') return (
     <div className="legend" aria-label="MRI group difference legend">
       <strong>Your MRI group difference</strong>

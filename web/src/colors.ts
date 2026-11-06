@@ -30,7 +30,7 @@ export function colorForRegion(
     return new Color().setHSL((region.region_id * 0.61803398875) % 1, 0.48, 0.61)
   }
   if (metric === 'anatomy') return NEUTRAL.clone()
-  if (metric === 'pattern' || metric === 'scan_effect') {
+  if (metric === 'pattern' || metric === 'scan_effect' || metric === 'upload') {
     const v = overlay?.get(region.region_id)
     if (v === undefined) return NOT_MEASURED.clone()
     return NEUTRAL.clone().lerp(metric === 'pattern' ? new Color('#d94801') : POSITIVE, Math.max(0, Math.min(1, v)))
