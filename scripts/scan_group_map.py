@@ -29,8 +29,10 @@ def template_image():
     return sitk_from_nib(t)
 
 def sitk_from_nib(img):
-    tmp = os.path.join(os.environ.get("TMPDIR", "/tmp"), f"_nib_{os.getpid()}_{id(img)}.nii.gz")
-    nib.save(img, tmp); out = sitk.ReadImage(tmp, sitk.sitkFloat32); os.remove(tmp); return out
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:  # works on Windows, macOS and Linux
+        tmp = os.path.join(td, "img.nii.gz")
+        nib.save(img, tmp); return sitk.ReadImage(tmp, sitk.sitkFloat32)
 
 def crude_brain_mask(img):
     """Threshold + largest component + hole fill. Rough: images that are already skull-stripped work best."""
