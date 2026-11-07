@@ -7,6 +7,6 @@ src = Path(sys.argv[1]); d = np.load(src, allow_pickle=True)
 Y, G = d['Y'], d['group']; C = Y[G == 0]
 if len(C) < 5: sys.exit('Need at least 5 control scans.')
 out = {'schema_version': '1', 'n_control': int(len(C)), 'region_ids': list(range(1, Y.shape[1] + 1)),
-       'mean': C.mean(0).tolist(), 'sd': np.maximum(C.std(0, ddof=1), 1e-6).tolist()}
+       'total_mean': float(C.sum(1).mean()), 'total_sd': float(max(C.sum(1).std(ddof=1), 1e-6)), 'mean': C.mean(0).tolist(), 'sd': np.maximum(C.std(0, ddof=1), 1e-6).tolist()}
 dst = Path(__file__).resolve().parents[1] / 'web/public/data/scan_reference.json'
 dst.write_text(json.dumps(out)); print('wrote', dst, 'from', len(C), 'controls')

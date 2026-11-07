@@ -129,7 +129,7 @@ export default function App() {
           onSelect={selectRegion}
           onView={setView}
         />
-        <ScanUpload result={upload} onResult={(r) => { setUpload(r); if (r) setMetric('upload') }} />
+        <ScanUpload result={upload} regions={enrichment.regions} onSelect={selectRegion} onResult={(r) => { setUpload(r); if (r) setMetric('upload') }} />
         <div className={`brain-stage ${selected ? 'has-panel' : ''}`}>
           <Suspense fallback={<div className="scene-loading">Preparing WebGL brain…</div>}><BrainScene
             geometryData={geometry}
