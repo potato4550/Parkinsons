@@ -3,12 +3,13 @@ Rough, research-only: compares one T1 scan with a control reference and reports 
 import base64, io, json, shutil, sys, tempfile
 from pathlib import Path
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import scan_group_map as sgm  # noqa: E402
+import covariates  # noqa: E402
 import nibabel as nib  # noqa: E402
 
 DATA = ROOT / 'web/public/data'
@@ -49,14 +50,20 @@ def previews(path):
         out.append('data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode())
     return out
 
-def run(path):
+def run(path, age=None, sex=None):
     c = load()
     try:
         frac, _, _ = sgm.process(path, c['template'], c['atlas'])
     except Exception as e:
         raise HTTPException(422, f'Could not process this scan: {e}')
-    ref = c['ref']; mean = np.array(ref['mean']); sd = np.array(ref['sd']); ids = ref['region_ids']
-    z = (frac - mean) / sd
+    ref = c['ref']; ids = ref['region_ids']; cm = ref.get('cov_model')
+    adjusted = []
+    if cm:  # age/sex adjustment fitted on controls; unknown age/sex fall back to the control average
+        a = age if age is not None else cm['age_mean']; s = (1.0 if sex == 'M' else 0.0) if sex in ('M', 'F') else cm['sex_mean']
+        z = covariates.zscores(cm, frac, [a], [s])[0]
+        adjusted = [n for n, v in (('age', age), ('sex', sex if sex in ('M', 'F') else None)) if v is not None]
+    else:
+        z = (frac - np.array(ref['mean'])) / np.array(ref['sd'])
     sims = {name: corr(-z, np.array([c['pat'][name].get(str(i), 0.0) for i in ids])) for name in ('parkinson', 'alzheimer')}
     if c['effects']:  # data-driven pattern learned from the user's own patient-vs-control scans
         eff = {r['region_id']: max(0.0, -r['effect_d']) for r in c['effects']['regions']}
@@ -72,11 +79,11 @@ def run(path):
     if (np.abs(z) > 4).mean() > 0.3: warnings.append('Over 30% of regions are extreme (more than 4 SD). The scan probably did not align or segment well.')
     clf = None
     if c['clf']:
-        m = c['clf']; x = (frac - np.array(m['mean'])) / np.array(m['sd'])
+        m = c['clf']; x = (z - np.array(m['mean'])) / np.array(m['sd'])
         prob = 1 / (1 + np.exp(-(float(np.dot(x, m['coef'])) + m['intercept'])))
         clf = {'probability_patient_like': float(prob), 'cv_auc': m['cv_auc'], 'permutation_p': m['permutation_p'], 'n': m['n_control'] + m['n_patient'],
                'better_than_chance': bool(m['cv_auc'] >= 0.6 and m['permutation_p'] <= 0.05)}
-    return {'guess': guess, 'confidence': 'low', 'similarity': sims, 'share_regions_below_2sd': abn, 'classifier': clf, 'warnings': warnings,
+    return {'guess': guess, 'confidence': 'low', 'similarity': sims, 'share_regions_below_2sd': abn, 'classifier': clf, 'adjusted_for': adjusted, 'warnings': warnings,
             'regions': [{'region_id': i, 'z': float(zz)} for i, zz in zip(ids, z)],
             'caveat': 'Rough pattern similarity from one scan, rough pipeline, tested only on synthetic data. Not a diagnosis.'}
 
@@ -84,12 +91,12 @@ def run(path):
 def health(): return {'ok': True}
 
 @app.post('/analyze')
-async def analyze(file: UploadFile = File(...)):
+async def analyze(file: UploadFile = File(...), age: float | None = Form(None), sex: str | None = Form(None)):
     suffix = '.nii.gz' if (file.filename or '').endswith('.gz') else '.nii'
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / f'scan{suffix}'
         with open(p, 'wb') as f: shutil.copyfileobj(file.file, f)
-        res = run(str(p))
+        res = run(str(p), age, sex)
         try: res['previews'] = previews(str(p))
         except Exception: res['previews'] = []
     return res

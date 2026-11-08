@@ -1,6 +1,8 @@
 export type Metric = 'anatomy' | 'z_score' | 'observed_score' | 'fdr_p' | 'spatial_robustness' | 'validation_score' | 'agreement' | 'pattern' | 'scan_effect' | 'upload'
 export interface ScanEffectRegion { region_id: number; region_name: string; mean_control: number; mean_patient: number; percent_difference: number; effect_d: number; p: number; fdr_p: number }
 export interface ScanEffects { n_control: number; n_patient: number; caveat: string; n_regions_fdr_below_0_05: number; regions: ScanEffectRegion[] }
+export interface RegionGene { gene: string; weight: number; expression: number; score: number }
+export interface RegionTopGenes { caveat: string; method: string; diseases: Record<string, Record<string, RegionGene[]>> }
 export interface TypicalPatterns { caveat: string; references: string[]; patterns: Record<string, Record<string, number>> }
 export type Hemisphere = 'whole' | 'L' | 'R'
 export type ViewPreset = 'reset' | 'left' | 'right' | 'anterior' | 'posterior' | 'superior' | 'inferior'

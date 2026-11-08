@@ -13,3 +13,8 @@ Run: double-click `start.bat` (or run the two commands in `start.bat` yourself),
 The classifier prints its cross-validated AUC; if it is near 0.5 the app says to ignore it. Research demo only, not a diagnosis.
 
 Credits and licences: built on GENE2BRAIN (check its licence), the Allen Human Brain Atlas data, AAL3, and OpenNeuro dataset ds005892 (check its licence before redistributing derived files).
+
+## Newer additions
+- Genes for every region: `python scripts/build_region_top_genes.py` (already run; output `web/public/data/region_top_genes.json` is committed). Score = L2G gene weight x (expression in region minus mean across regions). Candidates only, not causes.
+- Age/sex adjustment: `build_scan_reference.py` and `train_scan_classifier.py` fit an age+sex model on controls only. Enter age and sex in the upload box if known; unknown values fall back to the control average. Rerun both scripts after pulling this change.
+- Results: all-regions table and "Download results (CSV)" in the upload box.

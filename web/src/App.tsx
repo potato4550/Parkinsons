@@ -7,9 +7,9 @@ import { RegionPanel } from './components/RegionPanel'
 import { ResearchSections } from './components/ResearchSections'
 import { Tooltip } from './components/Tooltip'
 import { loadResearchData } from './data'
-import type { AtlasGeometry, EnrichmentData, Hemisphere, Metric, MultidiseaseAtlas, ProjectMetadata, ScanEffects, TypicalPatterns, RegionRecord, ViewPreset } from './types'
+import type { AtlasGeometry, EnrichmentData, Hemisphere, Metric, MultidiseaseAtlas, ProjectMetadata, RegionTopGenes, ScanEffects, TypicalPatterns, RegionRecord, ViewPreset } from './types'
 
-type Loaded = { enrichment: EnrichmentData; metadata: ProjectMetadata; geometry: AtlasGeometry; multidisease: MultidiseaseAtlas; patterns: TypicalPatterns | null; scan: ScanEffects | null }
+type Loaded = { enrichment: EnrichmentData; metadata: ProjectMetadata; geometry: AtlasGeometry; multidisease: MultidiseaseAtlas; patterns: TypicalPatterns | null; scan: ScanEffects | null; regionGenes: RegionTopGenes | null }
 const BrainScene = lazy(() => import('./components/BrainScene').then((module) => ({ default: module.BrainScene })))
 const query = new URLSearchParams(window.location.search)
 const validMetrics: Metric[] = ['anatomy', 'z_score', 'observed_score', 'fdr_p', 'spatial_robustness', 'validation_score', 'agreement', 'pattern', 'scan_effect', 'upload']
@@ -129,7 +129,7 @@ export default function App() {
           onSelect={selectRegion}
           onView={setView}
         />
-        <ScanUpload result={upload} regions={enrichment.regions} onSelect={selectRegion} onResult={(r) => { setUpload(r); if (r) setMetric('upload') }} />
+        <ScanUpload result={upload} regions={enrichment.regions} genes={loaded.regionGenes?.diseases[diseaseId] ?? {}} onSelect={selectRegion} onResult={(r) => { setUpload(r); if (r) setMetric('upload') }} />
         <div className={`brain-stage ${selected ? 'has-panel' : ''}`}>
           <Suspense fallback={<div className="scene-loading">Preparing WebGL brain…</div>}><BrainScene
             geometryData={geometry}

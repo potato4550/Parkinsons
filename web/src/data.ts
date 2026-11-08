@@ -1,4 +1,4 @@
-import type { AtlasGeometry, BiologicalInterpretationData, EnrichmentData, MultidiseaseAtlas, ProjectMetadata, RegionRecord, ScanEffects, TypicalPatterns } from './types'
+import type { AtlasGeometry, BiologicalInterpretationData, EnrichmentData, MultidiseaseAtlas, ProjectMetadata, RegionRecord, RegionTopGenes, ScanEffects, TypicalPatterns } from './types'
 
 const DATA_ROOT = '/data'
 
@@ -27,8 +27,8 @@ export async function loadResearchData() {
   }))
   validateClientData(enrichment, metadata, geometry, biology)
   validateMultidiseaseData(multidisease, geometry)
-  const [patterns, scan] = await Promise.all([optionalJson<TypicalPatterns>('typical_patterns.json'), optionalJson<ScanEffects>('scan_group_effects.json')])
-  return { enrichment, metadata, geometry, multidisease, patterns, scan }
+  const [patterns, scan, regionGenes] = await Promise.all([optionalJson<TypicalPatterns>('typical_patterns.json'), optionalJson<ScanEffects>('scan_group_effects.json'), optionalJson<RegionTopGenes>('region_top_genes.json')])
+  return { enrichment, metadata, geometry, multidisease, patterns, scan, regionGenes }
 }
 
 export function validateMultidiseaseData(atlas: MultidiseaseAtlas, geometry: AtlasGeometry) {
